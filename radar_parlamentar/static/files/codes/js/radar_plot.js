@@ -29,6 +29,7 @@ Plot = (function ($) {
     // Issue#272
     // "Global" armazena o parlamentar pesquisado
     var parlamentar_pesquisado = "";
+    //var corPartido = cor(Partido);
     
     // Function to load the data and draw the chart
     function initialize(nome_curto_casa_legislativa, periodicidade, palavras_chave, nome_parlamentar) {
@@ -362,6 +363,37 @@ Plot = (function ($) {
             atualiza_grafico(false);
         }
 
+
+        /**
+        ** Método da Issue #272, pinta os partidos para diferenciá-los do parlamentar pesquisado. Pinta-os de cinza.
+        **/
+        function pintaPartido(cor){
+            if(parlamentar_pesquisado != ""){
+                console.log("ENTROU NO PINTAPARTIDO E NO IF")
+                return "#D3D3D3"
+            }else{
+                console.log("ENTROU NO PINTAPARTIDO E NO ELSE")
+                return cor
+          }
+        }
+
+
+        /**
+        ** Método da Issue #272, pinta os parlamentares para diferenciá-los do parlamentar pesquisado. Pinta-os de cinza.
+        ** Pinta o parlamenta pesquisado de Rosa para diferenciá-lo dos demais.
+        **/    
+        function delimitaCor(parlamentares, partido){
+            if(parlamentares==parlamentar_pesquisado && parlamentar_pesquisado != ""){
+                console.log("ENTROU NO DELIMITACOR E NO IF")
+                return "#FF00FF"
+            }else if(parlamentar_pesquisado!=""){
+                return "#D3D3D3"
+            }else{
+                return cor(partido)
+            }
+        }
+
+
         // atualiza partidos e deputados no gráfico de acordo com o período atual
         // explodindo: true quando estamos atualizando o gráfico por causa de uma explosão de partido
         // (explosão de partido é quando se clica no partido para ver seus parlamentares)
@@ -392,7 +424,7 @@ Plot = (function ($) {
             if((parlamentar_pesquisado != "") && (explodir_partido == true)){
                 var partido_parlamentar_pesquisado = get_partido_parlamentar_pesquisado();
                 explodir_partido = false;
-                partidos_explodidos.push(partido_parlamentar_pesquisado);
+                partidos_explodidos.push(partido_parlamentar_pesquisado, parlamentar_pesquisado);
             }
             
             // Circles that represent the parties
@@ -435,7 +467,7 @@ Plot = (function ($) {
                 .attr("class","party_circle")
                 .attr("id", function(d) { return "circle-" + nome(d); })
                 .attr("r", 0)
-                .attr("fill", function(d) {return gradiente(grupo_grafico, nome(d), cor(d)); });
+                .attr("fill", function(d) {return gradiente(grupo_grafico, nome(d),pintaPartido(cor(d)))});
 
             new_parties.append("text")
                 .attr("text-anchor","middle")
@@ -498,12 +530,14 @@ Plot = (function ($) {
                              .duration(TEMPO_ANIMACAO)
                              .attr("cx", function(d) { return xScale(d.x[periodo_para]); })
                              .attr("cy", function(d) { return yScale(d.y[periodo_para]); });
-
-                var new_parlamentares = parlamentares.enter().append("circle")
+    
+            
+                var  new_parlamentares = parlamentares.enter().append("circle")
                     .attr("class",["parlamentar_circle partido_" + nome(partido)] )
                     .attr("id", function(d) { return "point-" + nome(d); })
                     .attr("r", RAIO_PARLAMENTAR)
-                    .attr("fill", cor(partido))
+                    .attr("fill",function(d){return delimitaCor(d.nome, partido)})
+                    .attr("opacity", 50,50)
                     .on("mouseover", function(d) {d["partido"] = partido.nome; return mouseover_parlamentar(d); })
                     .on("mouseout", function(d) {return mouseout_parlamentar(d); })
                     .on("click", function(d) { return implode_partido(partido); });
@@ -566,7 +600,7 @@ Plot = (function ($) {
             for(var i = 0; i < partidos_atuais.length; i++){    
                 parlamentares = partidos_atuais[i].parlamentares;
                 for(var j = 0; j < parlamentares.length; j++){
-                    if(parlamentares[j].nome == parlamentar_pesquisado){
+                    if((parlamentares[j].nome).localeCompare(parlamentar_pesquisado)==0){
                         return partidos_atuais[i];
                     }                      
                 }
