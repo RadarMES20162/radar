@@ -369,10 +369,10 @@ Plot = (function ($) {
         **/
         function pintaPartido(cor){
             if(parlamentar_pesquisado != ""){
-                console.log("ENTROU NO PINTAPARTIDO E NO IF")
                 return "#D3D3D3"
             }else{
-                console.log("ENTROU NO PINTAPARTIDO E NO ELSE")
+
+               // console.log("ENTROU NO PINTAPARTIDO E NO ELSE")
                 return cor
           }
         }
@@ -383,9 +383,12 @@ Plot = (function ($) {
         ** Pinta o parlamenta pesquisado de Rosa para diferenciá-lo dos demais.
         **/    
         function delimitaCor(parlamentares, partido){
-            if(parlamentares==parlamentar_pesquisado && parlamentar_pesquisado != ""){
-                console.log("ENTROU NO DELIMITACOR E NO IF")
-                return "#FF00FF"
+            if(parlamentares==parlamentar_pesquisado){
+                 if(parlamentar_pesquisado != ""){
+                   // console.log("ENTROU NO DELIMITACOR E NO IF")
+                    return "#FF00FF"
+                }
+                    return cor(partido)
             }else if(parlamentar_pesquisado!=""){
                 return "#D3D3D3"
             }else{
@@ -414,7 +417,7 @@ Plot = (function ($) {
                 .attr("class","legend_item")
                 .attr("id", function(d) { return "legend-"+nome(d); })
                 .text(function(d) {return d.numero + " | " + d.nome + " (" + d.t[periodo_atual] + ")"})
-                .on("mouseover", function(d) { mouseover_legend(d); })
+                .on("mouseover", function(d) { mouseover_legend(d);})
                 .on("mouseout", function(d) { mouseout_legend(d); })
                 .on("click", function(d) { click_legend(d); });
             legend_items.exit().remove();
@@ -602,9 +605,10 @@ Plot = (function ($) {
                 for(var j = 0; j < parlamentares.length; j++){
                     if((parlamentares[j].nome).localeCompare(parlamentar_pesquisado)==0){
                         return partidos_atuais[i];
-                    }                      
+                    }                    
                 }
             }
+            window.alert("Parlamentar nao encontrado")
         }
         
         function mouseover_legend(party) {
@@ -643,7 +647,10 @@ Plot = (function ($) {
 //            var circulo = d3.selectAll("#circle-"+nome(party)).classed("hover",true);
 //            d3.selectAll("#legend-"+nome(party)).classed("active",true);
             parlamentar_tip.show(parlamentar);
+            //console.log("PASSEI O MOUSE")
+            //parlamentar_pesquisado = ""
         }
+
         
         function mouseout_parlamentar(parlamentar) {
             parlamentar_tip.hide();
@@ -706,6 +713,7 @@ Plot = (function ($) {
         function implode_todos() {
             parlamentar_tip.hide();
             partidos_explodidos = [];
+
             atualiza_grafico(true);
         }
 
