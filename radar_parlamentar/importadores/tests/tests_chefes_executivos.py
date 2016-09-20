@@ -27,6 +27,7 @@ class ImportadorChefesExecutivosTeste(TestCase):
         chefe = models.ChefeExecutivo.objects.get(nome="teste_chefe_cmsp")
 
         self.assertEquals(chefe.nome, "teste_chefe_cmsp")
+        self.assertEquals(chefe.nome_completo, "teste_do_chefe_cmsp")
         self.assertEquals(chefe.partido.nome, "PT")
         self.assertEquals(chefe.mandato_ano_inicio, 1989)
         self.assertEquals(chefe.mandato_ano_fim, 1992)
@@ -41,6 +42,7 @@ class ImportadorChefesExecutivosTeste(TestCase):
         chefe = models.ChefeExecutivo.objects.get(nome="teste_chefe_sen")
 
         self.assertEquals(chefe.nome, "teste_chefe_sen")
+        self.assertEquals(chefe.nome_completo, "teste_do_chefe_sen")
         self.assertEquals(chefe.partido.nome, "PT")
         self.assertEquals(chefe.mandato_ano_inicio, 1990)
         self.assertEquals(chefe.mandato_ano_fim, 1992)
