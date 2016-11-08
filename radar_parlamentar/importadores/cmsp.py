@@ -244,22 +244,24 @@ class XmlCMSP:
                 votacoes.append(votacao)
             else:
                 pass
-
-
+                
+    """Método que retorna proposicao existente nas proposicoes (parametro)
+    caso nao exista, é criada esta proposicao e retornada
+    """
     def garante_existencia_de_proposicao(self, proposicoes,vot_tree, prop_nome):
         if self.prop_nome in proposicoes:
-            prop = proposicoes[prop_nome]
-            return prop
-        # a prop. nao estava ainda, entao devemo-la tanto  criar
-        # qnt cadastrar no dicionario.
+            proposicao = proposicoes[prop_nome]
+            return proposicao
+        #A proposicao no estava nas proposicoes recebidas, portanto devemos
+        #tanto criar quanto cadastrar no dicionario
         else:
-            prop = models.Proposicao()
-            prop.sigla, prop.numero, prop.ano = self. \
+            proposicao = models.Proposicao()
+            proposicao.sigla, proposicao.numero, proposicao.ano = self. \
                 tipo_num_anoDePropNome(prop_nome)
-            prop.ementa = vot_tree.get('Ementa')
-            prop.casa_legislativa = self.cmsp
-            proposicoes[prop_nome] = prop
-            return prop
+            proposicao.ementa = vot_tree.get('Ementa')
+            proproposicao.casa_legislativa = self.cmsp
+            proposicoes[prop_nome] = proposicao
+            return proposicao
 
     def sessao_from_tree(self, proposicoes, votacoes, sessao_tree):
         self.data_da_sessao = self.converte_data(sessao_tree.get('Data'))
