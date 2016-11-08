@@ -223,20 +223,26 @@ class XmlCMSP:
             vot.save()
             return vot
 
-    def votacao_from_tree(self, proposicoes,
-                          votacoes, vot_tree):
-        # se é votação nominal
-        votacao_TipoVotacao = vot_tree.get('TipoVotacao')
-        if vot_tree.tag == 'Votacao' and votacao_TipoVotacao == 'Nominal':
+
+    """
+    Método para adicionar as votações referentes a uma proposição
+    Só adiciona se a votação for nominal
+    """
+    def votacao_from_tree(self, proposicoes, votacoes, vot_tree):
+        # verifica se é votação nominal
+        tipo_votacao = vot_tree.get('TipoVotacao')
+        if vot_tree.tag == 'Votacao' and tipo_votacao == 'Nominal':
             # Prop_nome eh como se identifica internamente as propostas.
             # Queremos saber a que proposicao estah associada a votacao
-            # analisanda.
+            # analisada.
             # vai retornar prop_nome se votação for de proposição
             prop_nome = self.prop_nome(vot_tree.get('Materia'))
             # se a votacao for associavel a uma proposicao, entao..
             if prop_nome:
-                vot = self.filtrar_votacoes(proposicoes, votacoes, vot_tree, prop_nome)
-                votacoes.append(vot)
+                votacao = self.filtrar_votacoes(proposicoes, votacoes, vot_tree, prop_nome)
+                votacoes.append(votacao)
+            else:
+                pass
 
 
     def garante_existencia_de_proposicao(self, proposicoes,vot_tree, prop_nome):
