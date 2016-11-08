@@ -195,37 +195,38 @@ class XmlCMSP:
 
 
     def filtrar_votacoes(self, proposicoes,votacoes, vot_tree, prop_nome):
-        id_vot = vot_tree.get('VotacaoID')
+        id_votacao = vot_tree.get('VotacaoID')
         votacoes_em_banco = models.Votacao.objects.filter(
-            proposicao__casa_legislativa__nome_curto='cmsp', id_vot=id_vot)
+            proposicao__casa_legislativa__nome_curto='cmsp', id_vot=id_votacao)
         if votacoes_em_banco:
-            vot = votacoes_em_banco[0]
+            votacao = votacoes_em_banco[0]
         else:
             # a proposicao a qual a votacao sob analise se refere jah
             # estava no dicionario (eba!)
-            prop = self.garante_existencia_de_proposicao(proposicoes,vot_tree, prop_nome)
+            proposicao = self.garante_existencia_de_proposicao(proposicoes,vot_tree, prop_nome)
             if self.verbose:
-                logger.info('Proposicao %s salva' % prop)
-            prop.save()
-            vot = models.Votacao()
+                logger.info('Proposicao %s salva' % proposicao)
+            proposicao.save()
+            votacao = models.Votacao()
             # só pra criar a chave primária e poder atribuir o votos
-            vot.save()
-            vot.id_vot = id_vot
-            vot.descricao = vot_tree.get('Materia') + ' - ' + vot_tree.get('NotasRodape')
-            vot.data = self.data_da_sessao
-            vot.resultado = vot_tree.get('Resultado')
-            self.votos_from_tree(vot_tree, vot)
-            vot.proposicao = prop
+            votacao.save()
+            votacao.id_vot = id_votacao
+            votacao.descricao = votacao_tree.get('Materia') + ' - ' + vot_tree.get('NotasRodape')
+            votacao.data = self.data_da_sessao
+            votacao.resultado = vot_tree.get('Resultado')
+            self.votos_from_tree(vot_tree, votacao)
+            votacao.proposicao = proposicao
             if self.verbose:
-                logger.info('Votacao %s salva' % vot)
+                logger.info('Votacao %s salva' % votacao)
             else:
                 self.progresso()
-            vot.save()
-            return vot
+            votacao.save()
+            return votacao
 
 
     """
-    Método para adicionar as votações referentes a uma proposição
+    Método para adicionar as votações referentes a uma proposição no dicionario
+    votacoes
     Só adiciona se a votação for nominal
     """
     def votacao_from_tree(self, proposicoes, votacoes, vot_tree):
