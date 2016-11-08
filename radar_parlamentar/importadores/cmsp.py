@@ -193,6 +193,36 @@ class XmlCMSP:
                                                   parlamentar=voto.parlamentar)
         return len(votos_iguais) == 0
 
+
+    def filtrar_votacoes(self, proposicoes,votacoes, vot_tree, prop_nome):
+        id_vot = vot_tree.get('VotacaoID')
+        votacoes_em_banco = models.Votacao.objects.filter(
+            proposicao__casa_legislativa__nome_curto='cmsp', id_vot=id_vot)
+        if votacoes_em_banco:
+            vot = votacoes_em_banco[0]
+        else:
+            # a proposicao a qual a votacao sob analise se refere jah
+            # estava no dicionario (eba!)
+            prop = self.garante_existencia_de_proposicao(proposicoes,vot_tree, prop_nome)
+            if self.verbose:
+                logger.info('Proposicao %s salva' % prop)
+            prop.save()
+            vot = models.Votacao()
+            # só pra criar a chave primária e poder atribuir o votos
+            vot.save()
+            vot.id_vot = id_vot
+            vot.descricao = vot_tree.get('Materia') + ' - ' + vot_tree.get('NotasRodape')
+            vot.data = self.data_da_sessao
+            vot.resultado = vot_tree.get('Resultado')
+            self.votos_from_tree(vot_tree, vot)
+            vot.proposicao = prop
+            if self.verbose:
+                logger.info('Votacao %s salva' % vot)
+            else:
+                self.progresso()
+            vot.save()
+            return vot
+
     def votacao_from_tree(self, proposicoes,
                           votacoes, vot_tree):
         # se é votação nominal
@@ -205,45 +235,24 @@ class XmlCMSP:
             prop_nome = self.prop_nome(vot_tree.get('Materia'))
             # se a votacao for associavel a uma proposicao, entao..
             if prop_nome:
-                id_vot = vot_tree.get('VotacaoID')
-                votacoes_em_banco = models.Votacao.objects.filter(
-                    proposicao__casa_legislativa__nome_curto='cmsp', id_vot=id_vot)
-                if votacoes_em_banco:
-                    vot = votacoes_em_banco[0]
-                else:
-                    # a proposicao a qual a votacao sob analise se refere jah
-                    # estava no dicionario (eba!)
-                    if prop_nome in proposicoes:
-                        prop = proposicoes[prop_nome]
-                    # a prop. nao estava ainda, entao devemo-la tanto  criar
-                    # qnt cadastrar no dicionario.
-                    else:
-                        prop = models.Proposicao()
-                        prop.sigla, prop.numero, prop.ano = self. \
-                            tipo_num_anoDePropNome(prop_nome)
-                        prop.ementa = vot_tree.get('Ementa')
-                        prop.casa_legislativa = self.cmsp
-                        proposicoes[prop_nome] = prop
-
-                    if self.verbose:
-                        logger.info('Proposicao %s salva' % prop)
-                    prop.save()
-                    vot = models.Votacao()
-                    # só pra criar a chave primária e poder atribuir o votos
-                    vot.save()
-                    vot.id_vot = id_vot
-                    vot.descricao = vot_tree.get('Materia') + ' - ' + vot_tree.get('NotasRodape')
-                    vot.data = self.data_da_sessao
-                    vot.resultado = vot_tree.get('Resultado')
-                    self.votos_from_tree(vot_tree, vot)
-                    vot.proposicao = prop
-                    if self.verbose:
-                        logger.info('Votacao %s salva' % vot)
-                    else:
-                        self.progresso()
-                    vot.save()
-
+                vot = self.filtrar_votacoes(proposicoes, votacoes, vot_tree, prop_nome)
                 votacoes.append(vot)
+
+
+    def garante_existencia_de_proposicao(self, proposicoes,vot_tree, prop_nome):
+        if self.prop_nome in proposicoes:
+            prop = proposicoes[prop_nome]
+            return prop
+        # a prop. nao estava ainda, entao devemo-la tanto  criar
+        # qnt cadastrar no dicionario.
+        else:
+            prop = models.Proposicao()
+            prop.sigla, prop.numero, prop.ano = self. \
+                tipo_num_anoDePropNome(prop_nome)
+            prop.ementa = vot_tree.get('Ementa')
+            prop.casa_legislativa = self.cmsp
+            proposicoes[prop_nome] = prop
+            return prop
 
     def sessao_from_tree(self, proposicoes, votacoes, sessao_tree):
         self.data_da_sessao = self.converte_data(sessao_tree.get('Data'))
