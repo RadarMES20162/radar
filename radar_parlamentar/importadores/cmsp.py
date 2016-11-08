@@ -115,7 +115,12 @@ class XmlCMSP:
         return None
 
     def votacao_valida(self, nome_prop, texto):
-        return nome_prop in TIPOS_PROPOSICOES and 'Inversão' not in texto
+        """Método retorna se uma votação é valida ou não.
+        A votação é valida se nome_prop está em TIPOS_PROPOSICOES e não
+        possui 'Inversão' no texto
+        """
+        eh_valida =  nome_prop in TIPOS_PROPOSICOES and 'Inversão' not in texto
+        return eh_valida
 
     def tipo_num_anoDePropNome(self, prop_nome):
         """Extrai ano de "tipo num/ano" """
@@ -244,7 +249,7 @@ class XmlCMSP:
                 votacoes.append(votacao)
             else:
                 pass
-                
+
     """Método que retorna proposicao existente nas proposicoes (parametro)
     caso nao exista, é criada esta proposicao e retornada
     """
