@@ -198,15 +198,22 @@ class ImportadorVotacoesSenado:
             prop.save()
             self.proposicoes[prop_nome] = prop
         return prop
-
-    def _from_xml_to_bd(self, xml_file):
+    def _read_xml(self, xml_file):
         """Salva no banco de dados do Django e retorna lista das votações"""
-
+        
         f = open(xml_file, 'r')
         xml = f.read()
         f.close()
         tree = etree.fromstring(xml)
+        return tree
 
+    def _find_the_votacao_code(self, votacao_tree):
+        codigo = votacao_tree.find('CodigoSessaoVotacao').text
+        return codigo
+    
+    def _from_xml_to_bd(self, xml_file):
+
+        tree = self._read_xml(xml_file)
         votacoes = []
         # Pelo q vimos, nesses XMLs não há votações 'inúteis' (homenagens etc)
         # como na cmsp (exceto as secretas)
@@ -217,7 +224,7 @@ class ImportadorVotacoesSenado:
                 votacao_secreta = votacao_tree.find('Secreta').text
                 if votacao_tree.tag == 'Votacao' and votacao_secreta == 'N':
 
-                    codigo = votacao_tree.find('CodigoSessaoVotacao').text
+                    codigo = self._find_the_votacao_code(votacao_tree)
                     votacoes_query = models.Votacao.objects.filter(
                         id_vot=codigo)
 
@@ -228,7 +235,7 @@ class ImportadorVotacoesSenado:
                         proposicao = self._proposicao_from_tree(votacao_tree)
                         self.progresso()
                         votacao = models.Votacao()
-                        votacao.id_vot = codigo
+                        votacao.id_vot = self._find_the_votacao_code(votacao_tree)
                         # só pra criar a chave primária e poder atribuir o
                         # votos
                         votacao.save()
