@@ -211,6 +211,17 @@ class ImportadorVotacoesSenado:
         codigo = votacao_tree.find('CodigoSessaoVotacao').text
         return codigo
     
+    def _creating_and_setting_votacao(self, votacao_tree):
+        proposicao = self._proposicao_from_tree(votacao_tree)
+        self.progresso()
+        votacao = models.Votacao()
+        votacao.id_vot = self._find_the_votacao_code(votacao_tree)
+        # só pra criar a chave primária e poder atribuir os
+        # votos
+        votacao.save()
+        
+        return votacao
+
     def _from_xml_to_bd(self, xml_file):
 
         tree = self._read_xml(xml_file)
@@ -232,13 +243,7 @@ class ImportadorVotacoesSenado:
                         votacao = votacoes_query[0]
                         votacoes.append(votacao)
                     else:
-                        proposicao = self._proposicao_from_tree(votacao_tree)
-                        self.progresso()
-                        votacao = models.Votacao()
-                        votacao.id_vot = self._find_the_votacao_code(votacao_tree)
-                        # só pra criar a chave primária e poder atribuir o
-                        # votos
-                        votacao.save()
+                        votacao = self._creating_and_setting_votacao(votacao_tree)
                         votacao.descricao = votacao_tree.find(
                             'DescricaoVotacao').text
                         votacao.data = self._converte_data(
@@ -246,7 +251,7 @@ class ImportadorVotacoesSenado:
                         if votacao_tree.find('Resultado') is not None:
                             votacao.resultado = votacao_tree.find(
                                 'Resultado').text
-                        votacao.proposicao = proposicao
+                        votacao.proposicao = self._proposicao_from_tree(votacao_tree)    
                         votos_tree = votacao_tree.find('Votos')
                         if votos_tree is not None:
                             votos = self._votos_from_tree(votos_tree, votacao)
