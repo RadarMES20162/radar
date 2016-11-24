@@ -198,9 +198,10 @@ class ImportadorVotacoesSenado:
             prop.save()
             self.proposicoes[prop_nome] = prop
         return prop
+
     def _read_xml(self, xml_file):
         """Salva no banco de dados do Django e retorna lista das votações"""
-        
+
         f = open(xml_file, 'r')
         xml = f.read()
         f.close()
@@ -210,7 +211,7 @@ class ImportadorVotacoesSenado:
     def _find_the_votacao_code(self, votacao_tree):
         codigo = votacao_tree.find('CodigoSessaoVotacao').text
         return codigo
-    
+
     def _creating_and_setting_votacao(self, votacao_tree):
         proposicao = self._proposicao_from_tree(votacao_tree)
         self.progresso()
@@ -219,54 +220,57 @@ class ImportadorVotacoesSenado:
         # só pra criar a chave primária e poder atribuir os
         # votos
         votacao.save()
-        
+
         return votacao
 
-    def _from_xml_to_bd(self, xml_file):
+    def _funcao_do_for(self, votacoes_tree):
+
+        votacoes = []
+        for votacao_tree in votacoes_tree:
+            # se votação não é secreta
+            votacao_secreta = votacao_tree.find('Secreta').text
+            if votacao_tree.tag == 'Votacao' and votacao_secreta == 'N':
+
+                codigo = self._find_the_votacao_code(votacao_tree)
+                votacoes_query = models.Votacao.objects.filter(id_vot=codigo)
+
+                if votacoes_query:
+                    votacao = votacoes_query[0]
+                    votacoes.append(votacao)
+                else:
+                    votacao = self._creating_and_setting_votacao(votacao_tree)
+                    votacao.descricao = votacao_tree.find('DescricaoVotacao').text
+                    votacao.data = self._converte_data(votacao_tree.find('DataSessao').text)
+                    if votacao_tree.find('Resultado') is not None:
+                        votacao.resultado = votacao_tree.find('Resultado').text
+                    votacao.proposicao = self._proposicao_from_tree(votacao_tree)
+                    votos_tree = votacao_tree.find('Votos')
+                    if votos_tree is not None:
+                        votos = self._votos_from_tree(votos_tree, votacao)
+                        if not votos:
+                            logger.warn('Votação desconsiderada (sem votos)')
+                            votacao.delete()
+                        else:
+                            votacao.save()
+                            votacoes.append(votacao)
+                    else:
+                        logger.warn('Votação desconsiderada (votos_tree nulo)')
+                        votacao.delete()
+        return votacoes
+
+
+    def _save_votacao_in_db(self, xml_file):
 
         tree = self._read_xml(xml_file)
-        votacoes = []
         # Pelo q vimos, nesses XMLs não há votações 'inúteis' (homenagens etc)
         # como na cmsp (exceto as secretas)
         votacoes_tree = tree.find('Votacoes')
-        if votacoes_tree is not None:
-            for votacao_tree in votacoes_tree:
-                # se votação não é secreta
-                votacao_secreta = votacao_tree.find('Secreta').text
-                if votacao_tree.tag == 'Votacao' and votacao_secreta == 'N':
-
-                    codigo = self._find_the_votacao_code(votacao_tree)
-                    votacoes_query = models.Votacao.objects.filter(
-                        id_vot=codigo)
-
-                    if votacoes_query:
-                        votacao = votacoes_query[0]
-                        votacoes.append(votacao)
-                    else:
-                        votacao = self._creating_and_setting_votacao(votacao_tree)
-                        votacao.descricao = votacao_tree.find(
-                            'DescricaoVotacao').text
-                        votacao.data = self._converte_data(
-                            votacao_tree.find('DataSessao').text)
-                        if votacao_tree.find('Resultado') is not None:
-                            votacao.resultado = votacao_tree.find(
-                                'Resultado').text
-                        votacao.proposicao = self._proposicao_from_tree(votacao_tree)    
-                        votos_tree = votacao_tree.find('Votos')
-                        if votos_tree is not None:
-                            votos = self._votos_from_tree(votos_tree, votacao)
-                            if not votos:
-                                logger.warn(
-                                    'Votação desconsiderada (sem votos)')
-                                votacao.delete()
-                            else:
-                                votacao.save()
-                                votacoes.append(votacao)
-                        else:
-                            logger.warn(
-                                'Votação desconsiderada (votos_tree nulo)')
-                            votacao.delete()
+        if votacoes_tree is None:
+            return votacoes
+        votacoes = self._funcao_do_for(votacoes_tree)
         return votacoes
+
+
 
     def progresso(self):
         """Indica progresso na tela"""
@@ -288,7 +292,7 @@ class ImportadorVotacoesSenado:
         # facilita debug"""
         for xml_file in self._xml_file_names():
             logger.info('Importando %s' % xml_file)
-            self._from_xml_to_bd(xml_file)
+            self._save_votacao_in_db(xml_file)
 
 
 class PosImportacao:
